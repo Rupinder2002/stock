@@ -82,3 +82,71 @@ for i in range(0,len(data)):
     new_data['Turnover'][i] = data['Turnover'][i]
     new_data['No. of Trades'][i] = data['No. of Trades'][i]
     new_data['% Dly Qt to Traded Qty'][i] = data['% Dly Qt to Traded Qty'][i]
+
+new_data['Year'] = pd.DatetimeIndex(new_data['Date']).year
+new_data['Month'] = pd.DatetimeIndex(new_data['Date']).month
+new_data['Week'] = pd.DatetimeIndex(new_data['Date']).week
+new_data['Day'] = pd.DatetimeIndex(new_data['Date']).day
+new_data['Dayofweek'] = pd.DatetimeIndex(new_data['Date']).day_name()
+new_data['Dayofyear'] = pd.DatetimeIndex(new_data['Date']).dayofyear
+new_data['Is_month_end'] = pd.DatetimeIndex(new_data['Date']).is_month_end
+new_data['Is_month_start'] = pd.DatetimeIndex(new_data['Date']).is_month_start
+new_data['Is_quarter_end'] = pd.DatetimeIndex(new_data['Date']).is_quarter_end
+new_data['Is_quarter_start'] = pd.DatetimeIndex(new_data['Date']).is_quarter_start
+new_data['Is_year_end'] = pd.DatetimeIndex(new_data['Date']).is_year_end
+new_data['Is_year_start'] = pd.DatetimeIndex(new_data['Date']).is_year_start
+new_data.head()
+
+switcher={
+    'Monday':0,
+    'Tuesday':1,
+    'Wednesday':2,
+    'Thursday':3,
+    'Friday':4,
+    'Saturday':5,
+    'Sunday':6
+}
+
+for i in range(0,len(new_data)):
+    prev=new_data['Dayofweek'][i]
+    new_data['Dayofweek'][i]=switcher.get(new_data['Dayofweek'][i],"Invalid day")
+#     if(new_data['Dayofweek'][i]=="Invalid day"):
+#         print(prev)
+print(new_data.head())
+
+new_data['mon_fri'] = 0
+for i in range(0,len(new_data)):
+    if (new_data['Dayofweek'][i] == 0 or new_data['Dayofweek'][i] == 4):
+        new_data['mon_fri'][i] = 1
+    else:
+        new_data['mon_fri'][i] = 0
+print(new_data.head())
+
+#split into train and validation
+train = new_data[:395]
+valid = new_data[395:]
+
+x_train = train.drop(['Date','Close Price'], axis=1)
+y_train = train['Close Price']
+x_valid = valid.drop(['Date','Close Price'], axis=1)
+y_valid = valid['Close Price']
+
+#implement linear regression
+from sklearn.linear_model import LinearRegression
+model = LinearRegression()
+model.fit(x_train,y_train)
+
+#make predictions and find the rmse
+preds = model.predict(x_valid)
+rms=np.sqrt(np.mean(np.power((np.array(y_valid)-np.array(preds)),2)))
+rms
+
+#plot
+valid['Predictions'] = 0
+valid['Predictions'] = preds
+
+valid.index = new_data[395:].index
+train.index = new_data[:395].index
+
+plt.plot(train['Close Price'])
+plt.plot(valid[['Close Price', 'Predictions']])

@@ -47,22 +47,36 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 dataset = read_csv('18-04-2019-TO-16-04-2021RELIANCEALLN.csv', header=0, index_col=2)
 dataset=dataset.drop(columns=['Series','Symbol'])
 print(dataset.head())
-# dataset['Year'] = pd.DatetimeIndex(dataset['Date']).year
-# dataset['Month'] = pd.DatetimeIndex(dataset['Date']).month
-# dataset['Week'] = pd.DatetimeIndex(dataset['Date']).week
-# dataset['Day'] = pd.DatetimeIndex(dataset['Date']).day
-# dataset['Dayofweek'] = pd.DatetimeIndex(dataset['Date']).day_name()
-# dataset['Dayofyear'] = pd.DatetimeIndex(dataset['Date']).dayofyear
-# dataset['Is_month_end'] = pd.DatetimeIndex(dataset['Date']).is_month_end
-# dataset['Is_month_start'] = pd.DatetimeIndex(dataset['Date']).is_month_start
-# dataset['Is_quarter_end'] = pd.DatetimeIndex(dataset['Date']).is_quarter_end
-# dataset['Is_quarter_start'] = pd.DatetimeIndex(dataset['Date']).is_quarter_start
-# dataset['Is_year_end'] = pd.DatetimeIndex(dataset['Date']).is_year_end
-# dataset['Is_year_start'] = pd.DatetimeIndex(dataset['Date']).is_year_start
+# print(dataset.index)
+dataset['Year'] = pd.DatetimeIndex(dataset.index).year
+dataset['Month'] = pd.DatetimeIndex(dataset.index).month
+dataset['Week'] = pd.DatetimeIndex(dataset.index).week
+dataset['Day'] = pd.DatetimeIndex(dataset.index).day
+dataset['Dayofweek'] = pd.DatetimeIndex(dataset.index).day_name()
+dataset['Dayofyear'] = pd.DatetimeIndex(dataset.index).dayofyear
+dataset['Is_month_end'] = pd.DatetimeIndex(dataset.index).is_month_end
+dataset['Is_month_start'] = pd.DatetimeIndex(dataset.index).is_month_start
+dataset['Is_quarter_end'] = pd.DatetimeIndex(dataset.index).is_quarter_end
+dataset['Is_quarter_start'] = pd.DatetimeIndex(dataset.index).is_quarter_start
+dataset['Is_year_end'] = pd.DatetimeIndex(dataset.index).is_year_end
+dataset['Is_year_start'] = pd.DatetimeIndex(dataset.index).is_year_start
+switcher={
+    'Monday':0,
+    'Tuesday':1,
+    'Wednesday':2,
+    'Thursday':3,
+    'Friday':4,
+    'Saturday':5,
+    'Sunday':6
+}
+
+for i in range(0,len(dataset)):
+    prev=dataset['Dayofweek'][i]
+    dataset['Dayofweek'][i]=switcher.get(dataset['Dayofweek'][i],"Invalid day")
 values = dataset.values
 # integer encode direction
 encoder = LabelEncoder()
-values[:,11] = encoder.fit_transform(values[:,11])
+values[:,23] = encoder.fit_transform(values[:,23])
 # ensure all data is float
 values = values.astype('float32')
 # normalize features
@@ -70,7 +84,7 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(values)
 # specify the number of lag hours
 n_days = 10
-n_features = 12
+n_features = 24
 # frame as supervised learning
 reframed = series_to_supervised(scaled, n_days, 1)
 print(reframed.shape)
@@ -110,14 +124,14 @@ pyplot.show()
 yhat = model.predict(test_X)
 test_X = test_X.reshape((test_X.shape[0], n_days*n_features))
 # invert scaling for forecast
-inv_yhat = concatenate((yhat, test_X[:, -11:]), axis=1)
+inv_yhat = concatenate((yhat, test_X[:, -23:]), axis=1)
 inv_yhat = scaler.inverse_transform(inv_yhat)
 inv_yhat = inv_yhat[:,0]
 print('prediction=')
 print(inv_yhat)
 # invert scaling for actual
 test_y = test_y.reshape((len(test_y), 1))
-inv_y = concatenate((test_y, test_X[:, -11:]), axis=1)
+inv_y = concatenate((test_y, test_X[:, -23:]), axis=1)
 inv_y = scaler.inverse_transform(inv_y)
 inv_y = inv_y[:,0]
 print('actual=')

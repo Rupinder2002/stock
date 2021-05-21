@@ -17,6 +17,7 @@ from sklearn.metrics import mean_squared_error
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
+import pandas as pd
 
 # convert series to supervised learning
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
@@ -46,10 +47,22 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 dataset = read_csv('18-04-2019-TO-16-04-2021RELIANCEALLN.csv', header=0, index_col=2)
 dataset=dataset.drop(columns=['Series','Symbol'])
 print(dataset.head())
+# dataset['Year'] = pd.DatetimeIndex(dataset['Date']).year
+# dataset['Month'] = pd.DatetimeIndex(dataset['Date']).month
+# dataset['Week'] = pd.DatetimeIndex(dataset['Date']).week
+# dataset['Day'] = pd.DatetimeIndex(dataset['Date']).day
+# dataset['Dayofweek'] = pd.DatetimeIndex(dataset['Date']).day_name()
+# dataset['Dayofyear'] = pd.DatetimeIndex(dataset['Date']).dayofyear
+# dataset['Is_month_end'] = pd.DatetimeIndex(dataset['Date']).is_month_end
+# dataset['Is_month_start'] = pd.DatetimeIndex(dataset['Date']).is_month_start
+# dataset['Is_quarter_end'] = pd.DatetimeIndex(dataset['Date']).is_quarter_end
+# dataset['Is_quarter_start'] = pd.DatetimeIndex(dataset['Date']).is_quarter_start
+# dataset['Is_year_end'] = pd.DatetimeIndex(dataset['Date']).is_year_end
+# dataset['Is_year_start'] = pd.DatetimeIndex(dataset['Date']).is_year_start
 values = dataset.values
 # integer encode direction
 encoder = LabelEncoder()
-values[:,4] = encoder.fit_transform(values[:,4])
+values[:,11] = encoder.fit_transform(values[:,11])
 # ensure all data is float
 values = values.astype('float32')
 # normalize features
@@ -100,11 +113,15 @@ test_X = test_X.reshape((test_X.shape[0], n_days*n_features))
 inv_yhat = concatenate((yhat, test_X[:, -11:]), axis=1)
 inv_yhat = scaler.inverse_transform(inv_yhat)
 inv_yhat = inv_yhat[:,0]
+print('prediction=')
+print(inv_yhat)
 # invert scaling for actual
 test_y = test_y.reshape((len(test_y), 1))
 inv_y = concatenate((test_y, test_X[:, -11:]), axis=1)
 inv_y = scaler.inverse_transform(inv_y)
 inv_y = inv_y[:,0]
+print('actual=')
+print(inv_y)
 # calculate RMSE
 rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
 print('Test RMSE: %.3f' % rmse)
